@@ -15,3 +15,19 @@ mybatis:
 
 server:
   port: 8080
+
+# ================================================= #
+#          JWT (JSON Web Token) 配置                #
+# ================================================= #
+jwt:
+  # 用于签发和验证 Token 的密钥。
+  # 重要提示: 在生产环境中，请务必使用一个通过 base64 编码的、足够长且随机的字符串！
+  # 这是一个示例密钥，请务必替换为您自己的。
+  secret: ZTMxZXlday5ScUdNImM5O3phfEU3Yy40fWQ8KyoiUl1Vcj0=
+
+  # 访问令牌 (Access Token) 的过期时间，单位为毫秒
+  expiration-ms: 3600000 # 1小时 (1 * 60 * 60 * 1000)
+
+  # 刷新令牌 (Refresh Token) 的过期时间，单位为毫秒
+  refresh-token:
+    expiration-ms: 86400000 # 24小时 (24 * 60 * 60 * 1000)

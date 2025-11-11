@@ -14,12 +14,12 @@ function normalize(app) {
 
 /**
 * 拉取应用列表（后端已支持 sort/order/page/size）
-* @param {Object} params
-* @param {number} params.page - 第几页（从1开始）
-* @param {number} params.size - 每页条数
-* @param {'rating'|'downloads'|'published_at'|'id'} params.sort - 排序字段
-* @param {'asc'|'desc'} params.order - 升/降序
-* @returns {Promise<{items:any[], total:number, page:number, size:number, sort:string, order:string}>}
+@param {Object} params
+@param {number} params.page - 第几页（从1开始）
+@param {number} params.size - 每页条数
+@param {'rating'|'downloads'|'published_at'|'id'} params.sort - 排序字段
+@param {'asc'|'desc'} params.order - 升/降序
+@returns {Promise<{items:any[], total:number, page:number, size:number, sort:string, order:string}>}
 */
 export async function getApps({ page = 1, size = 12, sort = 'rating', order = 'desc' } = {}) {
   if (USE_MOCK) {

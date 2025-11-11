@@ -1,0 +1,14 @@
+package com.example.demo.user.dto;
+
+import java.time.LocalDateTime;
+import lombok.Data;
+
+@Data
+public class UserResponse {
+    private Long id;
+    private String username;
+    private String email;
+    private String nickname;
+    private Integer status;
+    private LocalDateTime createdAt;
+}

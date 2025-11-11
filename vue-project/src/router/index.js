@@ -53,7 +53,7 @@ router.beforeEach(async (to, from, next) => {
           // 它的作用是：丢弃当前的导航，用相同的目标地址发起一次全新的导航。
           // 此时，因为 hasGeneratedRoutes 已经是 true，
           // 新的导航会直接进入上面的 if 分支，从而确保了新添加的路由能被正确匹配到。
-          next({ ...to, replace: true });
+          next({ path: to.fullPath, replace: true });
           
         } catch (error) {
           console.error('动态路由添加失败:', error);

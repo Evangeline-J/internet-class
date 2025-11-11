@@ -54,18 +54,30 @@ http.interceptors.response.use(
     }
   },
   (error) => {
-    // 网络错误处理 (保持不变)
+    // 【核心修复】这里是处理所有 HTTP 错误的地方
+    const err = new Error(); // 创建一个新的 Error 对象
+
     if (error.response) {
-      const p = error.response.data;
-      const msg = p?.message || `HTTP ${error.response.status}`;
-      const err = new Error(msg);
-      err.code = p?.code ?? error.response.status;
-      throw err;
+      // 服务器返回了响应，但状态码不是 2xx
+      const status = error.response.status;
+      const backendData = error.response.data;
+      
+      // 将后端返回的 message (如果有) 赋值给错误信息
+      err.message = backendData?.message || `请求失败，状态码：${status}`;
+      
+      // 【最关键的一步】将 HTTP 状态码附加到 error 对象的 code 属性上
+      err.code = status;
+
     } else if (error.request) {
-      throw new Error('网络不可用或服务器无响应');
+      // 请求已发出，但没有收到响应
+      err.message = '网络不可用或服务器无响应';
     } else {
-      throw new Error(error.message || '请求发生错误');
+      // 其他错误，例如请求配置出错
+      err.message = error.message || '请求发生未知错误';
     }
+
+    // 抛出我们处理过的、带有 code 属性的错误对象
+    return Promise.reject(err);
   }
 )
 

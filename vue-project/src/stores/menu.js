@@ -1,87 +1,126 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getMenus } from '@/api/menu'
-import router from '@/router'
 import MainLayout from '@/layouts/MainLayout.vue'
 
-// 使用 Vite 的 import.meta.glob 实现动态导入视图组件
-const viewModules = import.meta.glob('@/views/**/*.vue')
+// 动态收集 views（使用相对 glob，避免 alias 在 glob 上的问题）
+const viewModules = import.meta.glob('../views/**/*.vue')
 
-/**
- * 【最终修正版】
- * 格式化后端返回的菜单数据，转换成 Vue Router 的路由记录
- * 这个版本会安全地处理 path 或 component 为 null 的情况
- * @param {Array} menus - 后端返回的菜单数组
- * @returns {Array} - Vue Router 路由记录数组
- */
-function generateRoutes(menus) {
-  const routes = [];
-  for (const menu of menus) {
-    // 只有当一个菜单项同时拥有 path 和 component 时，它才是一个有效的、可渲染的路由。
-    // 父级菜单可能只有 children，没有 component，所以我们不为它直接创建路由，但会处理它的子项。
-    if (menu.path && menu.component) {
-      const route = {
-        // path 属性现在是安全的，因为它在 if 条件中已被检查
-        path: menu.path,
-        // name 的生成也是安全的
-        name: menu.path.replace('/', ''), 
-        meta: { title: menu.name, icon: menu.icon },
-        // 动态加载组件也是安全的
-        component: viewModules[`/src/views/${menu.component}.vue`],
-        children: [] // 先初始化 children
-      };
-
-      // 如果这个有效的路由还有子菜单，递归处理它们
-      if (menu.children && menu.children.length > 0) {
-        route.children = generateRoutes(menu.children);
-      }
-      routes.push(route);
-
-    } else if (menu.children && menu.children.length > 0) {
-      // 如果这个菜单项本身无效（比如没有 component），但它有子菜单，
-      // 我们需要将它的子菜单的路由“提级”，直接加到当前路由列表中。
-      routes.push(...generateRoutes(menu.children));
+function findImporterByPath(path) {
+  if (!path) return null
+  const p = path.replace(/^\//, '')
+  const candidates = [
+    `${p}.vue`,
+    `${p}/index.vue`,
+    `${capitalize(p)}View.vue`
+  ]
+  for (const k of Object.keys(viewModules)) {
+    for (const c of candidates) {
+      if (k.endsWith(c)) return viewModules[k]
     }
   }
-  return routes;
+  return null
 }
 
+function capitalize(s = '') {
+  return s.split(/[-_/]/).map(p => p ? (p[0].toUpperCase() + p.slice(1)) : '').join('')
+}
+
+function generateRoutes(menus = []) {
+  const routes = []
+  for (const menu of menus) {
+    // 尝试按 path 匹配视图文件（后端未提供 component 字段时）
+    const importer = menu.component
+      ? (Object.keys(viewModules).find(k => k.endsWith(`${menu.component}.vue`)) ? viewModules[Object.keys(viewModules).find(k => k.endsWith(`${menu.component}.vue`))] : null)
+      : findImporterByPath(menu.path)
+
+    if (menu.path && importer) {
+      const route = {
+        // children 使用相对 path（去掉前导 /）
+        path: menu.path.replace(/^\//, ''),
+        name: (menu.name || menu.path).replace(/\s+/g, '-'),
+        meta: { title: menu.name, icon: menu.icon },
+        component: importer,
+        children: []
+      }
+      if (menu.children && menu.children.length > 0) {
+        route.children = generateRoutes(menu.children)
+      }
+      routes.push(route)
+    } else if (menu.children && menu.children.length > 0) {
+      routes.push(...generateRoutes(menu.children))
+    } else {
+      console.warn('[menu store] 忽略菜单项（找不到组件或 path）：', menu)
+    }
+  }
+  return routes
+}
 
 export const useMenuStore = defineStore('menu', () => {
   const menus = ref([])
   const hasGeneratedRoutes = ref(false)
+  const LAYOUT_ROUTE_NAME = 'app-main-layout'
 
   async function fetchAndGenerateRoutes() {
-    // 1. 从后端获取菜单数据
-    const backendMenus = await getMenus()
-    menus.value = backendMenus
+    if (hasGeneratedRoutes.value) return
 
-    // 2. 将后端菜单数据转换为路由格式
-    const dynamicRoutes = generateRoutes(backendMenus)
+    try {
+      const backendMenus = await getMenus()
+      menus.value = backendMenus || []
+      console.log('[menu store] 后端原始菜单：', menus.value)
 
-    // 3. 将动态路由添加到主布局的子路由中
-    // 我们假设所有动态页面都在一个主布局下
-    router.addRoute({
-      path: '/',
-      component: MainLayout,
-      redirect: dynamicRoutes[0]?.path || '/fallback', // 重定向到第一个菜单项
-      children: dynamicRoutes
-    });
-    
-    // 4. 更新状态
-    hasGeneratedRoutes.value = true
+      const dynamicRoutes = generateRoutes(menus.value)
+      console.log('[menu store] 生成的动态路由（相对 path）：', dynamicRoutes)
+
+      const layoutRoute = {
+        path: '/',
+        name: LAYOUT_ROUTE_NAME,
+        component: MainLayout,
+        children: [
+          // 默认欢迎页，如果没有对应文件会使用第一个 view（若需自定义可改）
+          { path: '', name: 'welcome', component: viewModules['../views/WelcomeView.vue'] || (Object.values(viewModules)[0] || (() => import('../views/HomeView.vue'))) },
+          ...dynamicRoutes
+        ]
+      }
+
+      // 动态导入 router（关键，打破循环依赖）
+      const routerModule = await import('@/router')
+      const router = routerModule.default || routerModule.router || routerModule
+
+      // 添加路由（避免重复添加）
+      if (!(router.hasRoute && router.hasRoute(LAYOUT_ROUTE_NAME))) {
+        router.addRoute(layoutRoute)
+        console.log('[menu store] 已将 layoutRoute 添加到 router')
+      } else {
+        console.warn('[menu store] layoutRoute 已存在')
+      }
+
+      hasGeneratedRoutes.value = true
+    } catch (err) {
+      console.error('[menu store] 生成动态路由出错：', err)
+      throw err
+    }
   }
 
-  function reset() {
+  async function reset() {
     menus.value = []
-    hasGeneratedRoutes.value = false
-    // 这里可能还需要移除路由，但通常在退出登录后刷新页面即可
+    if (!hasGeneratedRoutes.value) {
+      hasGeneratedRoutes.value = false
+      return
+    }
+    try {
+      const routerModule = await import('@/router')
+      const router = routerModule.default || routerModule.router || routerModule
+      if (router.hasRoute && router.hasRoute(LAYOUT_ROUTE_NAME)) {
+        router.removeRoute(LAYOUT_ROUTE_NAME)
+        console.log('[menu store] 已移除 layoutRoute')
+      }
+    } catch (err) {
+      console.error('[menu store] 重置移除路由时出错：', err)
+    } finally {
+      hasGeneratedRoutes.value = false
+    }
   }
 
-  return {
-    menus,
-    hasGeneratedRoutes,
-    fetchAndGenerateRoutes,
-    reset
-  }
+  return { menus, hasGeneratedRoutes, fetchAndGenerateRoutes, reset }
 })

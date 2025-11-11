@@ -1,0 +1,12 @@
+import { http } from '@/utils/http'
+
+/**
+ * @description 模拟一个只有管理员才能调用的接口
+ * @param {object} data - 模拟需要传递的数据，例如要删除的用户ID
+ * @returns Promise
+ */
+export function deleteUser(data) {
+  // 使用 http.post 方法请求后端接口
+  // 根据 RESTful 风格，删除操作可能需要一个ID，这里我们模拟传递一个对象
+  return http.post('/v1/admin/delete-user', data)
+}

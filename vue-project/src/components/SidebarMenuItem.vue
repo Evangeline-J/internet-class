@@ -31,12 +31,49 @@ defineProps({
 </script>
 
 <style scoped>
-/* 样式可以保持在子组件中，以便更好地封装 */
+/* 仅美化渲染，不改动任何逻辑结构 */
 ul { list-style: none; padding: 0; margin: 0; }
-a { display: block; padding: 10px 20px; color: white; text-decoration: none; }
-a:hover, .router-link-active { background-color: #4a6fa1; }
+li { margin: 4px 10px; }
+
+a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 10px 14px;
+  color: #334155;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background-color .15s ease, color .15s ease, box-shadow .2s ease;
+}
+a:hover {
+  background-color: #eef2ff;
+}
+/* 选中态更醒目，左侧高亮条 */
+a.router-link-active {
+  color: #1e293b;
+  background: #e9eeff;
+  box-shadow: inset 3px 0 0 0 #7c57ff;
+}
+a.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #7c57ff;
+  border-radius: 2px;
+}
+
 /* 如果是父菜单项（不可点击），可以改变鼠标样式 */
 a[href=""] { cursor: default; }
 a[href=""]:hover { background-color: transparent; }
-.submenu { padding-left: 20px; }
+
+.submenu {
+  padding-left: 14px;
+  margin-left: 4px;
+  border-left: 1px dashed rgba(2,6,23,0.12);
+}
 </style>

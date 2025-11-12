@@ -44,7 +44,12 @@ http.interceptors.response.use(
         // 业务失败，抛出错误
         const errorMessage = payload.message || '业务处理失败';
         const error = new Error(errorMessage);
-        error.code = payload.code;
+        // 如果业务错误码是403xx，也设置HTTP状态码为403，方便前端统一处理
+        if (Math.floor(payload.code / 100) === 403) {
+          error.code = 403;
+        } else {
+          error.code = payload.code;
+        }
         return Promise.reject(error);
       }
     } else {
@@ -80,5 +85,8 @@ http.interceptors.response.use(
     return Promise.reject(err);
   }
 )
+
+// 是否使用 mock 数据（默认 false，使用真实后端）
+export const USE_MOCK = false
 
 export { http }

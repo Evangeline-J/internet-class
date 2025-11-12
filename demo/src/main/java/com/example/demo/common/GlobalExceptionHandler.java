@@ -1,5 +1,8 @@
 package com.example.demo.common;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +18,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Void> handleBiz(BusinessException ex) {
         return ApiResponse.fail(ex.getCode(), ex.getMessage());
+    }
+
+    // 403：权限不足（Spring Security 抛出）
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        ApiResponse<Void> response = ApiResponse.fail(40300, "您无此权限！");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     // 400：请求错误（参数缺失/类型不匹配/JSON 解析失败等）

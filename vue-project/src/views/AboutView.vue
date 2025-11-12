@@ -30,13 +30,14 @@
             id="delete-user-id" 
             v-model.number="deleteUserId" 
             placeholder="输入用户ID，例如 7"
+            min="1"
           />
         </div>
 
-        <button class="danger-button" @click="handleAdminAction" :disabled="!deleteUserId">
+        <button class="danger-button" @click="handleAdminAction" :disabled="isButtonDisabled">
           尝试删除用户 (管理员操作)
         </button>
-        <!-- 按钮在 deleteUserId 为空时禁用 -->
+        <!-- 按钮在 deleteUserId 为空、0或无效数字时禁用 -->
 
       </div>
 
@@ -45,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { getUserInfo } from '@/utils/auth'; 
 import { deleteUser } from '@/api/admin'; 
 
@@ -54,6 +55,12 @@ const userInfo = ref(null);
 
 // 【新增】创建一个响应式变量来存储用户输入的要删除的ID
 const deleteUserId = ref(null); 
+
+// 计算属性：判断按钮是否应该被禁用
+const isButtonDisabled = computed(() => {
+  // 如果 deleteUserId 为空、null、undefined、0 或 NaN，则禁用按钮
+  return !deleteUserId.value || deleteUserId.value <= 0 || isNaN(deleteUserId.value);
+});
 
 // 组件挂载后获取用户信息
 onMounted(() => {
@@ -88,9 +95,9 @@ const handleAdminAction = async () => {
     console.error('管理员操作失败:', error);
     
     // 检查拦截器传过来的错误码
-    if (error.code === 403) {
-      // 如果是 403 错误，显示权限不足的提示
-      alert('你没有权限！');
+    if (error.code === 403 || (error.code && Math.floor(error.code / 100) === 403)) {
+      // 如果是 403 错误（HTTP状态码403或业务错误码403xx），显示权限不足的提示
+      alert('您无此权限！');
     } else {
       // 对于其他错误 (如 404 用户不存在, 500 服务器异常等)
       // 显示从拦截器传过来的通用错误信息

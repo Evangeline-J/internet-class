@@ -36,8 +36,11 @@ router.beforeEach(async (to, from, next) => {
   if (hasToken) {
     // 用户已登录
     if (to.name === 'login') {
-      // 如果已登录还想去登录页，直接送回首页
-      next({ path: '/' });
+      // 如果已登录还想去登录页，直接送回仪表盘
+      next({ path: '/apps' });
+    } else if (to.path === '/') {
+      // 如果访问根路径，重定向到仪表盘
+      next({ path: '/apps', replace: true });
     } else {
       // 检查路由是否已生成
       if (menuStore.hasGeneratedRoutes) {

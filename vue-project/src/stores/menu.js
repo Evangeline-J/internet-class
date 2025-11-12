@@ -77,8 +77,8 @@ export const useMenuStore = defineStore('menu', () => {
         name: LAYOUT_ROUTE_NAME,
         component: MainLayout,
         children: [
-          // 默认欢迎页，如果没有对应文件会使用第一个 view（若需自定义可改）
-          { path: '', name: 'welcome', component: viewModules['../views/WelcomeView.vue'] || (Object.values(viewModules)[0] || (() => import('../views/HomeView.vue'))) },
+          // 默认欢迎页，使用 AppsView 作为主界面
+          { path: '', name: 'welcome', component: viewModules['../views/AppsView.vue'] || (() => import('../views/AppsView.vue')) },
           ...dynamicRoutes
         ]
       }

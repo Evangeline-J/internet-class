@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+const emit = defineEmits(['select'])
 import { Download, ChatDotSquare } from '@element-plus/icons-vue'
 
 const props = defineProps({ item: { type: Object, required: true } })
@@ -15,7 +16,7 @@ const initial = computed(() => String(props.item?.name || '').trim().charAt(0).t
   <article
     class="app-card group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.02)]
            hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 focus-within:shadow-md"
-    role="button" tabindex="0" :aria-label="item.name"
+    role="button" tabindex="0" :aria-label="item.name" @click="emit('select', item)"
   >
     <div class="flex items-start gap-4">
       <img v-if="!imgError" :src="item.avatar" :alt="item.name" loading="lazy"

@@ -79,6 +79,8 @@ export const useMenuStore = defineStore('menu', () => {
         children: [
           // 默认欢迎页，使用 AppsView 作为主界面
           { path: '', name: 'welcome', component: viewModules['../views/AppsView.vue'] || (() => import('../views/AppsView.vue')) },
+          // 固定注册聊天路由
+          { path: 'chat', name: 'chat', component: viewModules['../views/ChatView.vue'] || (() => import('../views/ChatView.vue')) },
           ...dynamicRoutes
         ]
       }

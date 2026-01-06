@@ -28,10 +28,9 @@ http.interceptors.response.use(
   (response) => {
     const payload = response.data;
 
-    // 检查 payload 是否存在
-    if (!payload) {
-      // 如果响应体为空，也视为一种错误
-      return Promise.reject(new Error('响应数据为空'));
+    // 检查 payload 是否存在（DELETE/204 等可能为空，此时视为成功返回 null）
+    if (payload === undefined || payload === null || payload === '') {
+      return null;
     }
 
     // 【核心修改】检查响应是否是我们标准的 {code, data} 包装格式

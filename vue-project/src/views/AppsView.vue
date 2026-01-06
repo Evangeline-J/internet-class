@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import AppCard from '@/components/AppCard.vue'
 import { getApps } from '@/data/getApps'
+import { useRouter } from 'vue-router'
 
 const list = ref([])
 const total = ref(0)
@@ -9,6 +10,7 @@ const page = ref(1)
 const size = ref(12)
 const sort = ref('rating')        // 与后端白名单一致：rating | downloads | published_at | id
 const order = ref('desc')         // 默认高->低
+const router = useRouter()
 
 const loading = ref(false)
 const error = ref('')
@@ -45,6 +47,11 @@ function onPageChange(p) {
   load()
 }
 
+function onSelectApp(item) {
+  if (item?.name?.includes('智能客服助手')) {
+    router.push('/chat')
+  }
+}
 onMounted(load)
 </script>
 
@@ -95,7 +102,7 @@ onMounted(load)
 
       <!-- 数据态 -->
       <div v-else class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <AppCard v-for="item in list" :key="item.id" :item="item" />
+        <AppCard v-for="item in list" :key="item.id" :item="item" @select="onSelectApp" />
       </div>
 
       <!-- 分页 -->

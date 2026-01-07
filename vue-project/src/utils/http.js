@@ -47,7 +47,7 @@ http.interceptors.response.use(
         if (Math.floor(payload.code / 100) === 403) {
           error.code = 403;
         } else {
-          error.code = payload.code;
+        error.code = payload.code;
         }
         return Promise.reject(error);
       }
